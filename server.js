@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const { Telegraf } = require('telegraf');
 const sharp = require('sharp');
+const { exec } = require('child_process');
 
 // Replace 'YOUR_BOT_TOKEN_HERE' with your actual bot token from BotFather
 const bot = new Telegraf('6943135495:AAG_43_g0BJYcpsPdFliJSXVQz-dit-iyhY');
@@ -337,14 +338,13 @@ app.get('/product-media/:identifier', async (req, res) => {
 
 
 
-
 app.post('/upload-product', upload.fields([
     { name: 'productImages[]', maxCount: 10 },
     { name: 'productVideos[]', maxCount: 5 }
 ]), async (req, res) => {
     const { price, name, categorie, identifier, 
             price_per_gram, price_per_oz, price_per_qp, 
-            price_per_half_p, price_per_1lb,description } = req.body;
+            price_per_half_p, price_per_1lb, description } = req.body;
     const productImages = req.files['productImages[]'] || [];
     const productVideos = req.files['productVideos[]'] || [];
 
@@ -363,17 +363,33 @@ app.post('/upload-product', upload.fields([
                     .resize(800) // Resize if needed (optional)
                     .jpeg({ quality: 20 }) // Compress and set quality (adjust as needed)
                     .toBuffer();
-                return compressedImage.toString('base64'); // Encode as Base64 string
+                return compressedImage; // Return compressed image buffer
+            })
+        );
+
+        // Save images to disk
+        await Promise.all(
+            imageBuffers.map((buffer, index) => {
+                const filePath = `./uploads/images/product_image_${Date.now()}_${index}.jpg`;
+                return fs.promises.writeFile(filePath, buffer);
             })
         );
 
         // Process videos
-        const videoBuffers = (productVideos || []).map(file => file.buffer.toString('base64')); // Encode video as Base64
+        const videoBuffers = (productVideos || []).map(file => file.buffer); // No need to convert videos to Base64
+
+        // Save videos to disk
+        await Promise.all(
+            videoBuffers.map((buffer, index) => {
+                const filePath = `./videos/product_video_${Date.now()}_${index}.mp4`;
+                return fs.promises.writeFile(filePath, buffer);
+            })
+        );
 
         // Combine all images and videos into a single JSON object
         const mediaData = JSON.stringify({
-            images: imageBuffers,
-            videos: videoBuffers
+            images: imageBuffers.map((_, index) => `./images/product_image_${Date.now()}_${index}.jpg`),
+            videos: videoBuffers.map((_, index) => `./videos/product_video_${Date.now()}_${index}.mp4`)
         });
 
         // Determine final price
@@ -399,9 +415,28 @@ app.post('/upload-product', upload.fields([
         await client.query(`
             INSERT INTO products (name, categorie, identifier, price, price_per_gram, price_per_oz, price_per_qp, price_per_half_p, price_per_1lb, media_data, description)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        `, [name, categorie, identifier, finalPrice, price_per_gram, price_per_oz, price_per_qp, price_per_half_p, price_per_1lb, mediaData,description]);
+        `, [name, categorie, identifier, finalPrice, price_per_gram, price_per_oz, price_per_qp, price_per_half_p, price_per_1lb, mediaData, description]);
 
-        res.send('Product successfully uploaded.');
+        // Git commit and push logic
+        exec('git add .', (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Error adding files: ${stderr}`);
+                return res.status(500).send('Error adding files to Git.');
+            }
+            exec('git commit -m "Automated commit from server: product upload"', (err, stdout, stderr) => {
+                if (err) {
+                    console.error(`Error committing files: ${stderr}`);
+                    return res.status(500).send('Error committing files to Git.');
+                }
+                exec('git push origin main', (err, stdout, stderr) => {
+                    if (err) {
+                        console.error(`Error pushing to repository: ${stderr}`);
+                        return res.status(500).send('Error pushing to Git repository.');
+                    }
+                    res.send('Product successfully uploaded and changes committed.');
+                });
+            });
+        });
     } catch (err) {
         console.error('Error processing or inserting data:', err.message);
         res.status(500).send('Error saving product.');
