@@ -336,6 +336,7 @@ app.get('/product-media/:identifier', async (req, res) => {
     }
 });
 
+const generateRandomNumber = () => Math.floor(Math.random() * 1000000000);
 
 
 app.post('/upload-product', upload.fields([
@@ -367,10 +368,13 @@ app.post('/upload-product', upload.fields([
             })
         );
 
+        // Generate a random number once for file paths
+        const randomNum = generateRandomNumber();
+
         // Save images to disk
         await Promise.all(
             imageBuffers.map((buffer, index) => {
-                const filePath = `./uploads/images/product_image_${Date.now()}_${index}.jpg`;
+                const filePath = `./uploads/images/product_image_${randomNum}_${index}.jpg`;
                 return fs.promises.writeFile(filePath, buffer);
             })
         );
@@ -381,15 +385,15 @@ app.post('/upload-product', upload.fields([
         // Save videos to disk
         await Promise.all(
             videoBuffers.map((buffer, index) => {
-                const filePath = `./videos/product_video_${Date.now()}_${index}.mp4`;
+                const filePath = `./videos/product_video_${randomNum}_${index}.mp4`;
                 return fs.promises.writeFile(filePath, buffer);
             })
         );
 
         // Combine all images and videos into a single JSON object
         const mediaData = JSON.stringify({
-            images: imageBuffers.map((_, index) => `product_image_${Date.now()}_${index}.jpg`),
-            videos: videoBuffers.map((_, index) => `product_video_${Date.now()}_${index}.mp4`)
+            images: imageBuffers.map((_, index) => `product_image_${randomNum}_${index}.jpg`),
+            videos: videoBuffers.map((_, index) => `product_video_${randomNum}_${index}.mp4`)
         });
 
         // Determine final price
