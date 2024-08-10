@@ -453,7 +453,7 @@ function fetchProducts(categorie) {
                 const videos = mediaData.videos || [];
                 
                 // Determine the first image URL (if available)
-                const firstImageUrl = images.length > 0 ? `data:image/jpeg;base64,${images[0]}` : '';
+                const firstImageUrl = images.length > 0 ? `http://localhost:3000/${images[0]}` : '';
 
                 // Extract price per weight category
                 const pricePerGram = parseFloat(product.price_per_gram) || 0;
@@ -487,8 +487,8 @@ function fetchProducts(categorie) {
                     .attr('data-type', product.type)
                     .attr('data-description', product.description)
                     .attr('data-image', firstImageUrl) // Main image URL
-                    .attr('data-images', JSON.stringify(images)) // Store other images as JSON string
-                    .attr('data-videos', JSON.stringify(videos)) // Store videos as JSON string
+                    .attr('data-images', JSON.stringify(images.map(img => `http://localhost:3000/${img}`))) // Other images URLs
+                    .attr('data-videos', JSON.stringify(videos.map(vid => `http://localhost:3000/${vid}`))) // Video URLs
                     .attr('data-id', product.identifier)
                     .attr('data-location', product.location)
                     .attr('data-price-per-gram', pricePerGram.toFixed(2) || '0')
@@ -500,7 +500,7 @@ function fetchProducts(categorie) {
                         <div class="product-price">$${lowestPriceInfo.price.toFixed(2)} ${lowestPriceInfo.type}</div>
                         ${firstImageUrl ? `<img src="${firstImageUrl}" alt="${product.name}" class="product-image"/>` : ''}
                         <div class="product-name">${product.name}</div>
-                        <button class="buy-button" data-id="${product.identifier}" data-price="${lowestPriceInfo.price}" data-image="${firstImageUrl}" data-description="product.description" data-price-per-gram="${pricePerGram.toFixed(2)}" data-price-per-oz="${pricePerOz.toFixed(2)}" data-price-per-qp="${pricePerQp.toFixed(2)}" data-price-per-half-p="${pricePerHalfP.toFixed(2)}" data-price-per-1lb="${pricePer1Lb.toFixed(2)}">Buy</button>
+                        <button class="buy-button" data-id="${product.identifier}" data-price="${lowestPriceInfo.price}" data-image="${firstImageUrl}" data-description="${product.description}" data-price-per-gram="${pricePerGram.toFixed(2)}" data-price-per-oz="${pricePerOz.toFixed(2)}" data-price-per-qp="${pricePerQp.toFixed(2)}" data-price-per-half-p="${pricePerHalfP.toFixed(2)}" data-price-per-1lb="${pricePer1Lb.toFixed(2)}">Buy</button>
                     `);
                 
                 // Event handler for buy button
@@ -517,7 +517,7 @@ function fetchProducts(categorie) {
                     const productDescription = encodeURIComponent(product.description);
                     const productLocation = encodeURIComponent(product.location);
 
-                    const orderUrl = `order.html?perlb=${perlb}&perhp=${perhp}&perqp=${perqp}&peroz=${peroz}&perg=${perg}&productImage=&productId=${productId}&productPrice=${productPrice}&productName=${productName}&productDescription=${productDescription}&productLocation=${productLocation}`;
+                    const orderUrl = `order.html?perlb=${perlb}&perhp=${perhp}&perqp=${perqp}&peroz=${peroz}&perg=${perg}&productImage=${productImage}&productId=${productId}&productPrice=${productPrice}&productName=${productName}&productDescription=${productDescription}&productLocation=${productLocation}`;
 
                     window.location.href = orderUrl;
                 });
@@ -532,7 +532,7 @@ function fetchProducts(categorie) {
     });
 }
 
-            function filterProducts() {
+function filterProducts() {
         // Get selected filter values
         const selectedCategory = $('.filter-category').val();
         const selectedPriceRange = $('.filter-price').val();

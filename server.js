@@ -388,8 +388,8 @@ app.post('/upload-product', upload.fields([
 
         // Combine all images and videos into a single JSON object
         const mediaData = JSON.stringify({
-            images: imageBuffers.map((_, index) => `./images/product_image_${Date.now()}_${index}.jpg`),
-            videos: videoBuffers.map((_, index) => `./videos/product_video_${Date.now()}_${index}.mp4`)
+            images: imageBuffers.map((_, index) => `product_image_${Date.now()}_${index}.jpg`),
+            videos: videoBuffers.map((_, index) => `product_video_${Date.now()}_${index}.mp4`)
         });
 
         // Determine final price
