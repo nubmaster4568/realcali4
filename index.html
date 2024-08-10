@@ -453,7 +453,7 @@ function fetchProducts(categorie) {
                 const videos = mediaData.videos || [];
                 
                 // Determine the first image URL (if available)
-                const firstImageUrl = images.length > 0 ? `http://localhost:3000/${images[0]}` : '';
+                const firstImageUrl = images.length > 0 ? `http://localhost:3000/uploads/images/${images[0]}` : '';
 
                 // Extract price per weight category
                 const pricePerGram = parseFloat(product.price_per_gram) || 0;
